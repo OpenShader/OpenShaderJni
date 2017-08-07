@@ -1,0 +1,4 @@
+[submodule "src/glslang"]
+	path = src/glslang
+	url = https://github.com/KhronosGroup/glslang.git
+	branch = master
