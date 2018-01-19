@@ -1,4 +1,6 @@
-[submodule "src/glslang"]
-	path = src/glslang
+[submodule "VC-LTL"]
+	path = VC-LTL
+	url = https://github.com/Chuyu-Team/VC-LTL.git
+[submodule "glslang"]
+	path = glslang
 	url = https://github.com/KhronosGroup/glslang.git
-	branch = master
