@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 2.8)
 if (POLICY CMP0048)
   cmake_policy(SET CMP0048 NEW)
 endif()
@@ -85,5 +85,5 @@ endif(ENABLE_HLSL)
 add_subdirectory(src/main/cpp)
 
 if(MSVC)
-    set_target_properties(glslang OGLCompiler OSDependent jni PROPERTIES VS_USER_PROPS "${CMAKE_CURRENT_SOURCE_DIR}/src/main/cpp/MSVC.props")
+    set_target_properties(glslang OGLCompiler OSDependent jni PROPERTIES VS_USER_PROPS "${PROJECT_SOURCE_DIR}/src/main/cpp/MSVC.props")
 endif(MSVC)

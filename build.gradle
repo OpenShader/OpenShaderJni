@@ -8,7 +8,7 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.novoda:bintray-release:<latest-version>'
+        classpath 'com.novoda:bintray-release:0.8.0'
     }
 }
 
@@ -27,4 +27,19 @@ repositories {
 }
 
 dependencies {
+}
+
+String artifactVersion = "nightly"
+if (System.env.RELEASE_VERSION != null && !System.env.RELEASE_VERSION != "")
+	artifactVersion = System.env.RELEASE_VERSION;
+
+publish {
+    userOrg = 'openshader'
+	repoName = 'OpenShaderJni'
+    groupId = 'org.openshader'
+    artifactId = 'openshaderjni'
+    publishVersion = artifactVersion
+	autoPublish = true
+    desc = 'The native libraries for OpenShader.'
+    website = 'https://github.com/OpenShader/OpenShaderJni'
 }

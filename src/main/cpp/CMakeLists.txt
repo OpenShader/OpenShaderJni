@@ -15,6 +15,7 @@ target_include_directories(jni
 
 set_property(TARGET jni PROPERTY FOLDER product)
 glslang_set_link_args(jni)
+set_target_properties(jni PROPERTIES OUTPUT_NAME "OpenShaderNative")
 
 set(LIBRARIES
     glslang
@@ -22,13 +23,11 @@ set(LIBRARIES
 
 if(WIN32)
     set(LIBRARIES ${LIBRARIES} psapi)
-	set_target_properties(jni PROPERTIES OUTPUT_NAME "OpenShaderNative")
 	set_target_properties(jni PROPERTIES LINK_LIBRARIES "%(AdditionalDependencies)psapi") # dirty hack...
 elseif(UNIX)
     if(NOT ANDROID)
         set(LIBRARIES ${LIBRARIES} pthread)
     endif()
-	set_target_properties(jni PROPERTIES OUTPUT_NAME "libOpenShaderNative")
 endif(WIN32)
 
 target_link_libraries(jni ${LIBRARIES})

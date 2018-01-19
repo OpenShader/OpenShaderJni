@@ -1,7 +1,7 @@
 #include "Compiler.h"
 #include "Traverser.h"
 
-#define __DEBUG__
+//#define __DEBUG__
 
 #ifdef __DEBUG__
 #include <chrono>
@@ -81,13 +81,13 @@ TString CompileJob::compile()
 		ShaderCapabilitySet(shaderCapabilities, GLSL150, false);
 	if (compiler->defaultVersion < 400)
 		ShaderCapabilitySet(shaderCapabilities, GLSL400, false);
-	ArrangingTraverser arranging_traverser = ArrangingTraverser();
-	EmitterTraverser traverser = EmitterTraverser(shaderCapabilities, new TMap<TString, TVector<TString>*>());
+	ArrangingTraverser arranging_traverser;
+	EmitterTraverser traverser(shaderCapabilities, new TMap<TString, TVector<TString>*>());
 	auto newSource = traverser.process(arranging_traverser, interm, compile_shader->getPool());
 	_debug_parseFinishTime = GET_NANOTIME();
 #ifdef __DEBUG__
 	auto _debug_delta2 = GET_DELTATIME(_debug_startTime, _debug_parseFinishTime);
-	std::stringstream debugResult = std::stringstream();
+	std::stringstream debugResult;
 	debugResult << "time1: " << _debug_delta << " time2:" << _debug_delta2;
 #endif
 	//return TString(debugResult.str().c_str());

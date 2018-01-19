@@ -3,7 +3,6 @@
 #include "org_openshader_jni_OpenShaderJni.h"
 #include "ShaderLang.h"
 #include "intermediate.h"
-#include "ShaderReconstructor.h"
 #include "Compiler.h"
 #include <string>
 

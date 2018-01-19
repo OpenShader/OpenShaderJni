@@ -84,7 +84,7 @@ private:
 	TVector<TString>* structEmittingOrder;
 	TIntermAggregate* initSeq = nullptr;
 	TMap<TString, TVector<TString>*>* uniformBlocks;
-	std::stringstream out = std::stringstream();
+	std::stringstream out;
 	void emitSymbol(const TType& type, bool isDeclaration, bool hasSemicolon, const char* symbolName = nullptr);
 	void emitSymbol(TIntermSymbol* symbol, bool isDeclaration, bool hasSemicolon)
 	{

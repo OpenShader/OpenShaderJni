@@ -4,4 +4,9 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props"/>
 	<Import Project="$(SolutionDir)..\VC-LTL\Shared.props"/>
   </ImportGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+		<DisableSpecificWarnings>4566;4819;</DisableSpecificWarnings>
+	</ClCompile>
+  </ItemDefinitionGroup>
 </Project>

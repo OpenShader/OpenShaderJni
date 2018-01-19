@@ -2,29 +2,68 @@ branches:
   only:
     - master
 
-matrix:
+stages:
+  - cpp
+  - java
+
+jobs:
   include:
-    - language: cpp
-      os:
-        - linux
-        - osx
+    - stage: cpp
+      language: cpp
+      os: linux
+      env: TARGET="Linux"
       sudo: false
       dist: trusty
       compiler: clang
-      addons:
-        apt:
-          packages:
-            - clang-3.6
-      install:
-        - if [[ "$TRAVIS_OS_NAME" == "linux" && "$CC" == "clang" ]]; then
-          export CC=clang-3.6 CXX=clang++-3.6;
-          fi
       script:
-        - mkdir build && cd build
-          cmake -DCMAKE_BUILD_TYPE=MinSizeRel
-            -DCMAKE_INSTALL_PREFIX=`pwd`/install ..;
-          fi
-      
-    - language: java
+        - eval "CC=clang-5.0 && CXX=clang++-5.0"
+          mkdir build && cd build;
+          cmake -DCMAKE_BUILD_TYPE=MinSizeRel ..;
+          make -j4;
+      after_success:
+        - curl -X PUT -T ./src/main/cpp/libOpenShaderNative.so -u $BINTRAY_USERNAME:$BINTRAY_KEY -H "X-Bintray-Package:WindowsDllCaches" -H "X-Bintray-Version:0" -H "X-Bintray-Publish:1" -H "X-Bintray-Override:1"  https://api.bintray.com/content/openshader/OpenShaderDevCache/libOpenShaderNative.so
+    - stage: cpp
+      language: cpp
+      os: linux
+      env: TARGET="Windows"
       sudo: false
       dist: trusty
+      compiler: clang
+      git:
+        submodules: false
+      install:
+        - npm install -g JSON.sh
+      script:
+        - bash ./docs/scripts/startWindowsBuild.sh
+    #- language: cpp
+    #  os: osx
+    #  sudo: false
+    #  compiler: clang
+    #  script:
+    #    - eval "CC=clang-5.0 && CXX=clang++-5.0"
+    #      mkdir build && cd build;
+    #      cmake -DCMAKE_BUILD_TYPE=MinSizeRel ..;
+    #      make -j4;
+    #  after_success:
+    #    - curl -X PUT -T ./src/main/cpp/libOpenShaderNative.dylib -u $BINTRAY_USERNAME:$BINTRAY_KEY -H "X-Bintray-Package:WindowsDllCaches" -H "X-Bintray-Version:0" -H "X-Bintray-Publish:1" -H "X-Bintray-Override:1"  https://api.bintray.com/content/openshader/OpenShaderDevCache/libOpenShaderNative.dylib
+    - stage: java
+      language: java
+      jdk: oraclejdk8
+      sudo: false
+      git:
+        submodules: false
+      before_install:
+        - chmod +x gradlew
+        - mkdir -p ./src/main/resources/META-INF/lib/windows_32/
+        - mkdir -p ./src/main/resources/META-INF/lib/windows_64/
+        - mkdir -p ./src/main/resources/META-INF/lib/linux_64/
+        - wget -O osjdllWin32.zip https://bintray.com/openshader/OpenShaderDevCache/download_file?file_path=osjdllWin32.zip
+        - wget -O osjdllx64.zip https://bintray.com/openshader/OpenShaderDevCache/download_file?file_path=osjdllx64.zip
+        - unzip -d ./src/main/resources/META-INF/lib/windows_32/ osjdllWin32.zip
+        - unzip -d ./src/main/resources/META-INF/lib/windows_64/ osjdllx64.zip
+        - wget -O libOpenShaderNative.so https://bintray.com/openshader/OpenShaderDevCache/download_file?file_path=libOpenShaderNative.so
+        - mv libOpenShaderNative.so ./src/main/resources/META-INF/lib/linux_64/
+        #- wget -O libOpenShaderNative.dylib https://bintray.com/openshader/OpenShaderDevCache/download_file?file_path=libOpenShaderNative.dylib
+        #- mv libOpenShaderNative.dylib ./src/main/resources/META-INF/lib/osx_64/
+      script:
+        - ./gradlew clean build bintrayUpload --info -PbintrayUser=$BINTRAY_USERNAME -PbintrayKey=$BINTRAY_KEY -PdryRun=false

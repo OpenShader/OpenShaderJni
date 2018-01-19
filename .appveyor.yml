@@ -1,0 +1,61 @@
+version: "{build}"
+
+os: Visual Studio 2017
+
+environment:
+  github_token:
+    secure: 6yPPyo6+WkUQUpcOhTIFoAskeMrd2BkB1Rj7Fz95OrO/C2kYOjY0R+DdxqkRicWe
+
+platform:
+  - Win32
+  - x64
+
+configuration:
+  - MinSizeRel
+
+clone_script: # https://github.com/appveyor/ci/issues/899
+  - git clone -q --branch=%APPVEYOR_REPO_BRANCH% https://github.com/%APPVEYOR_REPO_NAME%.git %APPVEYOR_BUILD_FOLDER%
+  - cd %APPVEYOR_BUILD_FOLDER%
+#  - git checkout -qf %APPVEYOR_REPO_COMMIT%
+  - git submodule update --init --recursive
+
+install:
+  - SET PATH=C:\Ruby22-x64\bin;%PATH%
+  - ps: "if ($env:PLATFORM -eq \"x64\") { gem install travis -v 1.8.8 --no-rdoc --no-ri; }"
+
+before_build:
+  - mkdir build && cd build
+  - IF "%PLATFORM%" == "Win32" cmake .. -G "Visual Studio 15 2017"
+  - IF "%PLATFORM%" == "x64" cmake .. -G "Visual Studio 15 2017 Win64"
+
+build:
+  parallel: true 
+  verbosity: minimal
+  project: build/OpenShaderJni.sln
+
+after_build:
+  - cd %APPVEYOR_BUILD_FOLDER%
+  - 7z a osjdll%PLATFORM%.zip %APPVEYOR_BUILD_FOLDER%\build\src\main\cpp\MinSizeRel\*.dll
+
+test_script:
+# do nothing
+  
+artifacts:
+  - path: osjdll%PLATFORM%.zip
+    name: OpenShaderJniDll
+
+deploy:
+  - provider: BinTray
+    username: szszss
+    api_key:
+      secure: T0UzFNO7zvyfwg8mTdHd/Oc9ZEd/1jfQL6TZvyYedUmhxXOLgWKzo5uOC564taOl
+    subject: openshader
+    repo: OpenShaderDevCache
+    package: WindowsDllCaches
+    version: 0
+    publish: true
+    override: true
+    explode: false
+
+#on_success:
+#  - ps: "if ($env:PLATFORM -eq \"x64\") { $token = $env:github_token;\n travis login --github-token $token;\n $body = '{ \"request\": { \"branch\":\"master\" }}'; \n  Invoke-WebRequest -Uri https://api.travis-ci.org/repo/OpenShader%2FOpenShaderJni/requests -Method POST -Header @{\"Content-Type\"=\"application/json\"; \"Accept\"=\"application/json\"; \"Travis-API-Version\"=\"3\"; \"Authorization\"=\"token $(travis token)\"}  -Body  \"$body\" }"
