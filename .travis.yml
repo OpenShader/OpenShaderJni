@@ -4,10 +4,6 @@ branches:
 
 matrix:
   include:
-    - language: java
-      sudo: false
-      dist: trusty
-	  
     - language: cpp
       os:
         - linux
@@ -29,3 +25,6 @@ matrix:
             -DCMAKE_INSTALL_PREFIX=`pwd`/install ..;
           fi
       
+    - language: java
+      sudo: false
+      dist: trusty

@@ -1,6 +1,16 @@
 apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'idea'
+apply plugin: 'com.novoda.bintray-release'
+
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.novoda:bintray-release:<latest-version>'
+    }
+}
 
 compileJava{options.encoding = 'utf-8'}
 [compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
