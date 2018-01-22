@@ -40,6 +40,7 @@ publish {
     artifactId = 'openshaderjni'
     publishVersion = artifactVersion
 	autoPublish = true
+	override = true
     desc = 'The native libraries for OpenShader.'
     website = 'https://github.com/OpenShader/OpenShaderJni'
 }

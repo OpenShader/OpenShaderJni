@@ -33,14 +33,23 @@ else(WIN32)
     message("unknown platform")
 endif(WIN32)
 
-if(${CMAKE_CXX_COMPILER_ID} MATCHES "GNU")
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     add_compile_options(-Wall -Wmaybe-uninitialized -Wuninitialized -Wunused -Wunused-local-typedefs
                         -Wunused-parameter -Wunused-value  -Wunused-variable -Wunused-but-set-parameter -Wunused-but-set-variable -fno-exceptions)
     add_compile_options(-Wno-reorder)  # disable this from -Wall, since it happens all over.
-elseif(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
+	add_compile_options(-fno-rtti -fno-exceptions)
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     add_compile_options(-Wall -Wuninitialized -Wunused -Wunused-local-typedefs
                         -Wunused-parameter -Wunused-value  -Wunused-variable)
     add_compile_options(-Wno-reorder)  # disable this from -Wall, since it happens all over.
+	add_compile_options(-fno-rtti -fno-exceptions)
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+	if(CMAKE_CXX_FLAGS MATCHES "/GR ") 
+		string(REPLACE "/GR" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}") 
+	endif()
+	if(CMAKE_CXX_FLAGS MATCHES "/EHsc") 
+		string(REPLACE "/EHsc" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}") 
+	endif()
 endif()
 
 if(ENABLE_AMD_EXTENSIONS)
@@ -81,6 +90,14 @@ add_subdirectory(glslang/OGLCompilersDLL)
 if(ENABLE_HLSL)
     add_subdirectory(glslang/hlsl)
 endif(ENABLE_HLSL)
+
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+	string(REPLACE "-fno-exceptions" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}") 
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+	string(REPLACE "-fno-exceptions" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}") 
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+	add_compile_options(/EHsc)
+endif()
 
 add_subdirectory(src/main/cpp)
 
