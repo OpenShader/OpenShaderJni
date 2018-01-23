@@ -120,8 +120,7 @@ public class GlslangGui {
 					if (fileName.endsWith(".frag") || fileName.endsWith(".fsh"))
 						type = ShaderType.FRAGMENT;
 					
-					ShaderCompilerManager manager = new ShaderCompilerManager();
-					ShaderCompiler compiler = manager.createShaderCompiler(120);
+					ShaderCompiler compiler = ShaderCompilerManager.createShaderCompiler(120);
 					compiler.setIncluder(new IHeaderIncluder() {
 						@Override
 						public String includeSystem(String headerName, String includerName) {

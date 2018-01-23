@@ -50,12 +50,12 @@ private:
 	TVector<TString> structEmittingOrder = TVector<TString>(); // "suckest" design in this project
 	TIntermAggregate* initSeq = nullptr;
 	void findStruct(TType& structRef);
-	void process(TIntermediate *intermediate, TPoolAllocator *allocator);
+	void process(TIntermediate *intermediate);
 };
 
 class EmitterTraverser : public TIntermTraverser {
 public:
-	EmitterTraverser(int shaderCapabilities, TMap<TString, TVector<TString>*>* uniformBlocks)
+	EmitterTraverser(int shaderCapabilities, std::map<TString, TVector<TString>*>* uniformBlocks)
 	{
 		this->shaderCapabilities = shaderCapabilities;
 		this->uniformBlocks = uniformBlocks;
@@ -71,10 +71,10 @@ public:
 	virtual bool visitLoop(TVisit, TIntermLoop* node);
 	virtual bool visitBranch(TVisit, TIntermBranch* node);
 	virtual bool visitSwitch(TVisit, TIntermSwitch* node);
-	TString process(ArrangingTraverser& arranging_traverser, TIntermediate *intermediate, TPoolAllocator *allocator);
-	TString printOut(TPoolAllocator *allocator)
+	TString process(ArrangingTraverser& arranging_traverser, TIntermediate *intermediate);
+	TString printOut()
 	{
-		return TString(out.str().c_str(), *allocator);
+		return TString(out.str().c_str());
 	}
 private:
 	TIntermediate *intermediate;
@@ -83,7 +83,7 @@ private:
 	TMap<TString, TTypeList*>* structTable;
 	TVector<TString>* structEmittingOrder;
 	TIntermAggregate* initSeq = nullptr;
-	TMap<TString, TVector<TString>*>* uniformBlocks;
+	std::map<TString, TVector<TString>*>* uniformBlocks;
 	std::stringstream out;
 	void emitSymbol(const TType& type, bool isDeclaration, bool hasSemicolon, const char* symbolName = nullptr);
 	void emitSymbol(TIntermSymbol* symbol, bool isDeclaration, bool hasSemicolon)

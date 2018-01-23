@@ -15,12 +15,13 @@ using namespace glslang;
 
 class CompileJob;
 
+typedef TVector<TString>* InterfaceBlock;
+
 class Shader : public glslang::TShader
 {
 public:
 	Shader(EShLanguage lang) : glslang::TShader(lang) {}
 	glslang::TIntermediate* getIntermediate() { return intermediate; }
-	glslang::TPoolAllocator* getPool() { return pool; }
 };
 
 class ShaderCompiler
@@ -31,10 +32,15 @@ public:
 	~ShaderCompiler();
 	CompileJob* createCompileJob(EShLanguage shaderType);
 
-	/*TString newString(const char* str) // The default TString is created on the threaded pool.
+	InterfaceBlock createUniformBlock()
 	{
-		return TString(str, *pool);
-	}*/
+		return new TVector<TString>();
+	}
+
+	TString newString(const char* str) // The default TString is created on the threaded pool.
+	{
+		return TString(str);
+	}
 
 	void setCapablitity(ShaderCapability capability)
 	{
@@ -54,9 +60,6 @@ private:
 	int defaultVersion;
 	int capabilities = 0;
 	glslang::TShader::Includer *includer = new TShader::ForbidIncluder();
-	glslang::TPoolAllocator *pool;
-	std::map<TString, TString> *uniformBlocks;
-
 };
 
 class CompileJob
@@ -73,7 +76,7 @@ public:
 			delete this->filename;
 		this->source = new std::string(source);
 		auto s = this->source->c_str();
-		auto pp = reinterpret_cast<char**>(compile_shader->getPool()->allocate(2 * sizeof(char*)));
+		auto pp = reinterpret_cast<char**>(GetThreadPoolAllocator().allocate(2 * sizeof(char*)));
 		pp[0] = const_cast<char*>(s);
 		pp[1] = nullptr;
 		const char* const* fp = nullptr;
@@ -94,9 +97,9 @@ public:
 	{
 		compile_shader->addProcesses(p);
 	}
-	void setThreadedPool()
+	void addUniformBlock(const char* name, InterfaceBlock block)
 	{
-		SetThreadPoolAllocator(compile_shader->getPool());
+		uniformBlocks->insert_or_assign(TString(name), block);
 	}
 private:
 	CompileJob(ShaderCompiler *compiler, EShLanguage shaderType);
@@ -105,6 +108,7 @@ private:
 	TString *input_source = nullptr;
 	Shader *compile_shader = nullptr;
 	std::string *source = nullptr, *filename = nullptr;
+	std::map<TString, InterfaceBlock> *uniformBlocks;
 	//std::stringstream *debugInfo = nullptr;
 };
 

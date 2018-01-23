@@ -5,6 +5,7 @@
 #include "intermediate.h"
 #include "Compiler.h"
 #include <string>
+#include "InitializeDll.h"
 
 using namespace std;
 using namespace glslang;
@@ -16,6 +17,7 @@ jclass JAVACLASS_INCLUDER;
 jmethodID JAVAMETHOD_GLSLANG_INCLUDELOCAL;
 jmethodID JAVAMETHOD_GLSLANG_INCLUDESYSTEM;
 bool glslangAvailable = false;
+TPoolAllocator* openshaderMainPool = nullptr;
 
 const size_t MAX_INCLUDE_DEPTH = 32;
 
@@ -28,11 +30,16 @@ extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved)
 	}
 	JAVAENV = env;
 	glslangAvailable = glslang::InitializeProcess();
+	SetThreadPoolAllocator((openshaderMainPool = new TPoolAllocator()));
+	openshaderMainPool->push();
 	return JNI_VERSION_1_6;
 }
 
 extern "C" JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *vm, void *reserved)
 {
+	openshaderMainPool->popAll();
+	delete openshaderMainPool;
+	openshaderMainPool = nullptr;
 	glslang::FinalizeProcess();
 }
 
@@ -163,6 +170,30 @@ JNIEXPORT jlong JNICALL Java_org_openshader_jni_compiler_ShaderCompilerManager_c
 	return reinterpret_cast<jlong>(compiler);
 }
 
+JNIEXPORT void JNICALL Java_org_openshader_jni_compiler_ShaderCompilerManager_registerWorkThread_1do(JNIEnv *env, jclass klass)
+{
+	InitThread();
+	SetThreadPoolAllocator(new TPoolAllocator());
+}
+
+JNIEXPORT void JNICALL Java_org_openshader_jni_compiler_ShaderCompilerManager_unregisterWorkThread_1do(JNIEnv *env, jclass klass)
+{
+	GetThreadPoolAllocator().popAll();
+	delete &GetThreadPoolAllocator(); // what the ...
+	SetThreadPoolAllocator(nullptr);
+	DetachThread();
+}
+
+JNIEXPORT void JNICALL Java_org_openshader_jni_compiler_ShaderCompilerManager_pushMemoryPool_do_1do(JNIEnv *env, jclass klass)
+{
+	GetThreadPoolAllocator().push();
+}
+
+JNIEXPORT void JNICALL Java_org_openshader_jni_compiler_ShaderCompilerManager_popMemoryPool_do_1do(JNIEnv *env, jclass klass)
+{
+	GetThreadPoolAllocator().pop();
+}
+
 JNIEXPORT void JNICALL Java_org_openshader_jni_compiler_ShaderCompiler_delete_1do(JNIEnv *env, jclass klass, jlong ptr)
 {
 	ShaderCompiler *compiler = reinterpret_cast<ShaderCompiler*>(ptr);
@@ -174,6 +205,21 @@ JNIEXPORT jlong JNICALL Java_org_openshader_jni_compiler_ShaderCompiler_createCo
 	ShaderCompiler *compiler = reinterpret_cast<ShaderCompiler*>(ptr);
 	CompileJob *job = compiler->createCompileJob(static_cast<EShLanguage>(type));
 	return reinterpret_cast<jlong>(job);
+}
+
+JNIEXPORT jlong JNICALL Java_org_openshader_jni_compiler_ShaderCompiler_createUniformBlock_1do(JNIEnv *env, jclass klass, jlong ptr)
+{
+	ShaderCompiler *compiler = reinterpret_cast<ShaderCompiler*>(ptr);
+	return reinterpret_cast<jlong>(compiler->createUniformBlock());
+}
+
+JNIEXPORT void JNICALL Java_org_openshader_jni_compiler_ShaderCompiler_addMember_1do(JNIEnv *env, jclass klass, jlong clPtr, jlong ubPtr, jstring member)
+{
+	ShaderCompiler *compiler = reinterpret_cast<ShaderCompiler*>(clPtr);
+	InterfaceBlock block = reinterpret_cast<InterfaceBlock>(ubPtr);
+	const char* pointer = JAVAENV->GetStringUTFChars(member, nullptr);
+	block->push_back(TString(compiler->newString(pointer)));
+	JAVAENV->ReleaseStringUTFChars(member, pointer);
 }
 
 JNIEXPORT void JNICALL Java_org_openshader_jni_compiler_ShaderCompiler_setShaderCapability_1do(JNIEnv *env, jclass klass, jlong ptr, jint capability)
@@ -206,12 +252,20 @@ JNIEXPORT void JNICALL Java_org_openshader_jni_compiler_CompileJob_setSource_1do
 		env->ReleaseStringUTFChars(filename, f);
 }
 
+JNIEXPORT void JNICALL Java_org_openshader_jni_compiler_CompileJob_addUniformBlock_1do(JNIEnv *env, jclass klass, jlong cjPtr, jlong ubPtr, jstring name)
+{
+	CompileJob *job = reinterpret_cast<CompileJob*>(cjPtr);
+	InterfaceBlock block = reinterpret_cast<InterfaceBlock>(ubPtr);
+	const char* pointer = JAVAENV->GetStringUTFChars(name, nullptr);
+	job->addUniformBlock(pointer, block);
+	JAVAENV->ReleaseStringUTFChars(name, pointer);
+}
+
 JNIEXPORT void JNICALL Java_org_openshader_jni_compiler_CompileJob_addPreprocess_1do(JNIEnv *env, jclass klass, jlong ptr, jobjectArray strArray)
 {
 	jsize size = env->GetArrayLength(strArray);
 	jobject *arr = static_cast<jobject*>(env->GetPrimitiveArrayCritical(strArray, nullptr));
 	CompileJob *job = reinterpret_cast<CompileJob*>(ptr);
-	job->setThreadedPool();
 	std::vector<std::string> vec;
 	for (int i = 0; i < size; i++)
 	{
@@ -227,16 +281,21 @@ JNIEXPORT void JNICALL Java_org_openshader_jni_compiler_CompileJob_addPreprocess
 
 JNIEXPORT jstring JNICALL Java_org_openshader_jni_compiler_CompileJob_compile_1do(JNIEnv *env, jclass klass, jlong ptr)
 {
+	GetThreadPoolAllocator().push();
+	CompileJob *job = reinterpret_cast<CompileJob*>(ptr);
+	TString result;
 	try
 	{
-		CompileJob *job = reinterpret_cast<CompileJob*>(ptr);
-		TString result = job->compile();
-		return env->NewStringUTF(result.c_str());
+		result = job->compile();
 	}
 	catch (std::exception &ex)
 	{
+		GetThreadPoolAllocator().pop();
 		string cause = string("Failed to compile shader:") + ex.what();
 		env->ThrowNew(JAVACLASS_EXCEPTION, cause.c_str());
 		return env->NewStringUTF("");
 	}
+	jstring str = env->NewStringUTF(result.c_str());
+	GetThreadPoolAllocator().pop();
+	return str;
 }

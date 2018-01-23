@@ -4,11 +4,6 @@ if (POLICY CMP0048)
 endif()
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-# if(WIN32)
-#	set(CMAKE_SYSTEM_VERSION 10.0.16299.0)
-#	set(CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION 10.0.16299.0)
-# endif(WIN32)
-
 include(GNUInstallDirs)
 
 set (SKIP_GLSLANG_INSTALL ON)
@@ -21,7 +16,7 @@ set (ENABLE_OPT ON)
 project(OpenShaderJni)
 
 if(WIN32)
-    set(CMAKE_DEBUG_POSTFIX "d")
+    #set(CMAKE_DEBUG_POSTFIX "d")
     if(MSVC)
         include(glslang/ChooseMSVCCRT.cmake)
 		add_definitions(-D_DISABLE_DEPRECATE_LTL_MESSAGE)
@@ -35,14 +30,14 @@ endif(WIN32)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     add_compile_options(-Wall -Wmaybe-uninitialized -Wuninitialized -Wunused -Wunused-local-typedefs
-                        -Wunused-parameter -Wunused-value  -Wunused-variable -Wunused-but-set-parameter -Wunused-but-set-variable -fno-exceptions)
+                        -Wunused-parameter -Wunused-value  -Wunused-variable -Wunused-but-set-parameter -Wunused-but-set-variable)
     add_compile_options(-Wno-reorder)  # disable this from -Wall, since it happens all over.
-	add_compile_options(-fno-rtti -fno-exceptions)
+	add_compile_options(-fno-rtti)
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     add_compile_options(-Wall -Wuninitialized -Wunused -Wunused-local-typedefs
                         -Wunused-parameter -Wunused-value  -Wunused-variable)
     add_compile_options(-Wno-reorder)  # disable this from -Wall, since it happens all over.
-	add_compile_options(-fno-rtti -fno-exceptions)
+	add_compile_options(-fno-rtti)
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
 	if(CMAKE_CXX_FLAGS MATCHES "/GR ") 
 		string(REPLACE "/GR" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}") 

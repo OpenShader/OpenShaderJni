@@ -6,7 +6,7 @@
   </ImportGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-		<DisableSpecificWarnings>4566;4819;</DisableSpecificWarnings>
+		<DisableSpecificWarnings>4530;4566;4819;</DisableSpecificWarnings>
 		<RuntimeTypeInfo>false</RuntimeTypeInfo>
 	</ClCompile>
   </ItemDefinitionGroup>

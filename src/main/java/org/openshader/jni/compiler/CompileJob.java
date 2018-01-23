@@ -2,6 +2,8 @@ package org.openshader.jni.compiler;
 
 import java.util.Collection;
 
+import org.openshader.jni.compiler.ShaderCompiler.UniformBlock;
+
 public class CompileJob {
 
 	private final long p_address;
@@ -34,11 +36,17 @@ public class CompileJob {
 		addPreprocess_do(p_address, preprocess);
 	}
 	
+	public void addUniformBlock(String name, UniformBlock ub) {
+		addUniformBlock_do(this.p_address, ub.getAddress(), name);
+	}
+	
 	public String compile() {
 		return compile_do(p_address);
 	}
 	
 	protected native static void setSource_do(long address, String source, String filename);
+	
+	protected native static void addUniformBlock_do(long jobAddress, long ubAddress, String ubName);
 	
 	protected native static void addPreprocess_do(long address, String[] preprocess);
 	

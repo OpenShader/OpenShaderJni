@@ -9,6 +9,7 @@ public class ShaderCompiler {
 	private boolean deleted = false;
 	
 	private final List<CompileJob> compileJobs = new ArrayList<>();
+	private final List<UniformBlock> uniformBlocks = new ArrayList<>();
 	
 	protected ShaderCompiler(long pointerAddress) {
 		this.p_address = pointerAddress;
@@ -42,6 +43,12 @@ public class ShaderCompiler {
 		setIncluder_do(p_address, includer);
 	}
 	
+	public UniformBlock createUniformBlock() {
+		UniformBlock block = new UniformBlock(createUniformBlock_do(p_address));
+		uniformBlocks.add(block);
+		return block;
+	}
+	
 	protected native static void delete_do(long address);
 	
 	protected native static long createCompileJob_do(long address, int shaderType);
@@ -49,6 +56,10 @@ public class ShaderCompiler {
 	protected native static long setShaderCapability_do(long address, int capability);
 	
 	protected native static long setIncluder_do(long address, IHeaderIncluder includer);
+	
+	protected native static long createUniformBlock_do(long address);
+	
+	protected native static void addMember_do(long clAddress, long ubAddress, String member);
 	
 	protected void assertNotDeleted() {
 		if (deleted)
@@ -80,5 +91,21 @@ public class ShaderCompiler {
 		UNIFORM_BLOCK, // ARB_uniform_buffer_object
 		TEXTURE_ARRAY, // EXT_texture_array 
 		SUBROUTINE; // ARB_shader_subroutine
+	}
+	
+	public class UniformBlock {
+		private final long p_address;
+		
+		protected UniformBlock(long address) {
+			this.p_address = address;
+		}
+		
+		public void addMember(String type, String name) {
+			addMember_do(ShaderCompiler.this.p_address, this.p_address, type + " " + name);
+		}
+		
+		long getAddress() {
+			return this.p_address;
+		}
 	}
 }

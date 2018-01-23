@@ -118,18 +118,18 @@ bool ArrangingTraverser::visitSwitch(TVisit, TIntermSwitch* node)
 	return true;
 }
 
-void ArrangingTraverser::process(TIntermediate * intermediate, TPoolAllocator * allocator)
+void ArrangingTraverser::process(TIntermediate * intermediate)
 {
 	intermediate->getTreeRoot()->traverse(this);
 }
 
 #define QUALIFIER_DOT (num++ > 0 ? ", " : "")
 
-TString EmitterTraverser::process(ArrangingTraverser &arranging_traverser, TIntermediate *intermediate, TPoolAllocator *allocator)
+TString EmitterTraverser::process(ArrangingTraverser &arranging_traverser, TIntermediate *intermediate)
 {
 	// VERSION
 	//auto shaderType = intermediate->getStage();
-	arranging_traverser.process(intermediate, allocator);
+	arranging_traverser.process(intermediate);
 	this->symbolTable = &arranging_traverser.symbolTable;
 	this->structTable = &arranging_traverser.structTable;
 	this->structEmittingOrder = &arranging_traverser.structEmittingOrder;
@@ -274,7 +274,7 @@ TString EmitterTraverser::process(ArrangingTraverser &arranging_traverser, TInte
 		}
 	}
 	intermediate->getTreeRoot()->traverse(this);
-	return printOut(allocator);
+	return printOut();
 }
 
 void EmitterTraverser::emitSymbol(const TType& type, bool isDeclaration, bool hasSemicolon, const char* symbolName)

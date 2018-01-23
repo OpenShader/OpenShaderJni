@@ -1,5 +1,6 @@
 #include "Compiler.h"
 #include "Traverser.h"
+#include "PoolAlloc.h"
 
 //#define __DEBUG__
 
@@ -17,14 +18,10 @@ using namespace glslang;
 
 ShaderCompiler::ShaderCompiler(int _defaultVersion) : defaultVersion(_defaultVersion)
 {
-	pool = new TPoolAllocator;
-	uniformBlocks = new std::map<TString, TString>();
 }
 
 ShaderCompiler::~ShaderCompiler()
 {
-	delete uniformBlocks;
-	delete pool;
 	setIncluder(nullptr);
 }
 
@@ -39,6 +36,7 @@ CompileJob::CompileJob(ShaderCompiler *compiler, EShLanguage shaderType)
 	this->compiler = compiler;
 	this->type = shaderType;
 	compile_shader = new Shader(type);
+	uniformBlocks = new std::map<TString, InterfaceBlock>();
 }
 
 CompileJob::~CompileJob()
@@ -49,6 +47,8 @@ CompileJob::~CompileJob()
 		delete source;
 	if (filename != nullptr)
 		delete filename;
+	if (uniformBlocks != nullptr)
+		delete uniformBlocks;
 }
 
 TString CompileJob::compile()
@@ -59,14 +59,17 @@ TString CompileJob::compile()
 		#extension GL_ARB_shading_language_420pack : enable\n \
 		#extension GL_ARB_shader_texture_lod : enable\n \
 		");
+	auto prePool = &GetThreadPoolAllocator();
 	auto result = compile_shader->parse(&DefaultTBuiltInResource, compiler->defaultVersion, ECompatibilityProfile, false, false,
 		(EShMessages)(EShMsgDebugInfo), *compiler->includer);
+	SetThreadPoolAllocator(prePool);
 	if (!result)
 	{
 		return compile_shader->getInfoLog();
 	}
-	auto _debug_parseFinishTime = GET_NANOTIME();
+	
 #ifdef __DEBUG__
+	auto _debug_parseFinishTime = GET_NANOTIME();
 	auto _debug_delta = GET_DELTATIME(_debug_startTime, _debug_parseFinishTime);
 #endif
 	_debug_startTime = GET_NANOTIME();
@@ -82,10 +85,10 @@ TString CompileJob::compile()
 	if (compiler->defaultVersion < 400)
 		ShaderCapabilitySet(shaderCapabilities, GLSL400, false);
 	ArrangingTraverser arranging_traverser;
-	EmitterTraverser traverser(shaderCapabilities, new TMap<TString, TVector<TString>*>());
-	auto newSource = traverser.process(arranging_traverser, interm, compile_shader->getPool());
-	_debug_parseFinishTime = GET_NANOTIME();
+	EmitterTraverser traverser(shaderCapabilities, uniformBlocks);
+	auto newSource = traverser.process(arranging_traverser, interm);
 #ifdef __DEBUG__
+	_debug_parseFinishTime = GET_NANOTIME();
 	auto _debug_delta2 = GET_DELTATIME(_debug_startTime, _debug_parseFinishTime);
 	std::stringstream debugResult;
 	debugResult << "time1: " << _debug_delta << " time2:" << _debug_delta2;
