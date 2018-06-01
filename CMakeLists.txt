@@ -16,6 +16,11 @@ set (ENABLE_OPT ON)
 project(OpenShaderJni)
 
 if(WIN32)
+	include("VC-LTL/VC-LTL helper for cmake.cmake")
+    #set_target_properties(glslang OGLCompiler OSDependent jni PROPERTIES VS_USER_PROPS "${PROJECT_SOURCE_DIR}/src/main/cpp/MSVC.props")
+endif(WIN32)
+
+if(WIN32)
     #set(CMAKE_DEBUG_POSTFIX "d")
     if(MSVC)
         include(glslang/ChooseMSVCCRT.cmake)
@@ -95,7 +100,3 @@ elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
 endif()
 
 add_subdirectory(src/main/cpp)
-
-if(MSVC)
-    set_target_properties(glslang OGLCompiler OSDependent jni PROPERTIES VS_USER_PROPS "${PROJECT_SOURCE_DIR}/src/main/cpp/MSVC.props")
-endif(MSVC)
